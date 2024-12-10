@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:chat/chat_page.dart';
 import 'package:chat/socket_provider.dart';
 import 'package:flutter/material.dart';
