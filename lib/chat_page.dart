@@ -11,44 +11,22 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   late SocketProvider socketProvider;
-  List<Map<String, dynamic>> socketModels = List.empty();
   final myController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-
     socketProvider = Provider.of<SocketProvider>(context, listen: false);
   }
 
-  // void connectSocket() {
-  //   socket = IO.io(
-  //       'http://10.0.2.2:3000',
-  //       IO.OptionBuilder()
-  //           .setTransports(['websocket'])
-  //           .disableAutoConnect()
-  //           .build());
-
-  //   socket.connect();
-  //   socket.onConnect((_) {
-  //     debugPrint('connect');
-  //     socket.emit('sendUserData', {"dataUsername": "test5"});
-  //     socket.on('chat', (data) {
-  //       final Map<String, dynamic> result = data;
-
-  //       socketModels.add(result);
-  //       setState(() {});
-  //     });
-  //   });
-  // }
-
   void sendMessage() {
     if (myController.text.isNotEmpty) {
-      MessageData messageData = new MessageData(
+      MessageData messageData = MessageData(
         message: myController.text,
         sender: socketProvider.username,
       );
       socketProvider.socket.emit('chat', messageData);
+      myController.clear();
     }
   }
 
@@ -56,17 +34,20 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mesajlaşma Sayfası"),
+        title: const Text("Mesajlaşma"),
+        backgroundColor: Colors.deepPurple,
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: Container(
-                color: Colors.red,
+                color: Colors.grey[100],
                 child: Consumer<SocketProvider>(
                   builder: (context, socketProvider, child) {
                     return ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 10),
                       itemCount: socketProvider.messageDataList.length,
                       itemBuilder: (context, index) {
                         return chatWidget(
@@ -81,23 +62,33 @@ class _ChatPageState extends State<ChatPage> {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: TextFormField(
-                controller: myController,
-                autovalidateMode: AutovalidateMode.always,
-                decoration: InputDecoration(
-                  suffixIcon: IconButton(
-                      onPressed: () {
-                        sendMessage();
-                      },
-                      icon: const Icon(Icons.send)),
-                  border: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blueAccent),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: myController,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: "Mesaj yaz...",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                      ),
+                    ),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.purple),
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    backgroundColor: Colors.deepPurple,
+                    child: IconButton(
+                      onPressed: sendMessage,
+                      icon: const Icon(Icons.send, color: Colors.white),
+                    ),
                   ),
-                  labelText: "Mesajınızı girin",
-                ),
+                ],
               ),
             ),
           ],
@@ -110,53 +101,43 @@ class _ChatPageState extends State<ChatPage> {
 Widget chatWidget(MessageData messageData, BuildContext context) {
   String username =
       Provider.of<SocketProvider>(context, listen: false).username;
-  return Padding(
-    padding: const EdgeInsets.all(8.0),
-    child: Align(
-      alignment: messageData.sender == username
-          ? Alignment.centerRight
-          : Alignment.centerLeft,
-      child: SizedBox(
-        width: 200,
-        child: Card(
-          elevation: 10,
-          color: Colors.greenAccent,
-          shadowColor: Colors.black26,
-          shape: const BeveledRectangleBorder(
-            borderRadius: BorderRadius.horizontal(
-                left: Radius.circular(5), right: Radius.circular(5)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 3.0),
-                  child: Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Text(
-                      messageData.message,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(right: 3.0),
-                  child: Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      "15.02.2023",
-                      style: TextStyle(
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+  bool isMyMessage = messageData.sender == username;
+
+  return Align(
+    alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(maxWidth: 250),
+      decoration: BoxDecoration(
+        color: isMyMessage ? Colors.deepPurple : Colors.grey[300],
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(12),
+          topRight: const Radius.circular(12),
+          bottomLeft: isMyMessage ? const Radius.circular(12) : Radius.zero,
+          bottomRight: isMyMessage ? Radius.zero : const Radius.circular(12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(
+            messageData.message,
+            style: TextStyle(
+              color: isMyMessage ? Colors.white : Colors.black87,
+              fontSize: 16,
             ),
           ),
-        ),
+          const SizedBox(height: 5),
+          Text(
+            "15.02.2023", // Tarihi dinamik yapabilirsin
+            style: TextStyle(
+              fontSize: 12,
+              color: isMyMessage ? Colors.white70 : Colors.black54,
+            ),
+          ),
+        ],
       ),
     ),
   );

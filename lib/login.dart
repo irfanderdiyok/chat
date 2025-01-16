@@ -1,4 +1,5 @@
 import 'package:chat/chat_page.dart';
+import 'package:chat/common.dart';
 import 'package:chat/socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -47,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
 
     for (var controller in controllers) {
       if (controller.text.isEmpty) {
-        showErrorDialog(
+        Common().showErrorDialog(
           "Kayıt Başarısız",
           "Bütün alanları doldurduğunuzdan emin olun.",
           context,
@@ -57,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     BuildContext popUp = context;
-    showLoading(context, popUp);
+    Common().showLoading(context, popUp);
 
     UserData userData = UserData(
       username: username.text,
@@ -78,63 +79,13 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.of(context).pop();
 
     if (result) {
-      await showErrorDialog("Başarılı", "Giriş Başarılı", context);
+      await Common().showErrorDialog("Başarılı", "Giriş Başarılı", context);
       MyFunction.changePage(ChatPage(), context);
     } else {
-      await showErrorDialog("Başarısız", "Giriş Başarısız", context);
+      await Common().showErrorDialog("Başarısız", "Giriş Başarısız", context);
     }
 
     // Navigator.pop(context);
-  }
-
-  Future showLoading(BuildContext context, BuildContext popUp) {
-    return showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          popUp = context;
-          return Dialog(
-            backgroundColor: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  // The loading indicator
-                  CircularProgressIndicator(),
-                  SizedBox(
-                    height: 15,
-                  ),
-                  // Some text
-                  Text('Loading...')
-                ],
-              ),
-            ),
-          );
-        });
-  }
-
-  Future showErrorDialog(
-      String errorTitle, String errorText, BuildContext context) {
-    return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(errorTitle),
-            content: Text(errorText),
-            actions: <Widget>[
-              TextButton(
-                style: TextButton.styleFrom(
-                  textStyle: Theme.of(context).textTheme.labelLarge,
-                ),
-                child: const Text('Kapat'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        });
   }
 
   Widget myInputField(String labelText, TextEditingController controller) {

@@ -1,4 +1,5 @@
 import 'package:chat/login.dart';
+import 'package:chat/register.dart';
 import 'package:chat/socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: LoginPage(),
+      home: RegisterScreen(),
     );
   }
 }

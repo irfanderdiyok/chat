@@ -9,13 +9,13 @@ class SocketProvider with ChangeNotifier {
   String username = "";
 
   void init() {
-    socket = IO.io('http://128.0.1.123:3002', <String, dynamic>{
-      'transports': ['websocket'],
-    });
-
-    // socket = IO.io('http://10.0.2.2:3001', <String, dynamic>{
+    // socket = IO.io('http://128.0.1.123:3002', <String, dynamic>{
     //   'transports': ['websocket'],
     // });
+
+    socket = IO.io('http://10.0.2.2:3002', <String, dynamic>{
+      'transports': ['websocket'],
+    });
 
     socket.onConnect((_) {
       print('Socket connected');
@@ -97,3 +97,25 @@ class MessageData {
     };
   }
 }
+
+
+  // void connectSocket() {
+  //   socket = IO.io(
+  //       'http://10.0.2.2:3000',
+  //       IO.OptionBuilder()
+  //           .setTransports(['websocket'])
+  //           .disableAutoConnect()
+  //           .build());
+
+  //   socket.connect();
+  //   socket.onConnect((_) {
+  //     debugPrint('connect');
+  //     socket.emit('sendUserData', {"dataUsername": "test5"});
+  //     socket.on('chat', (data) {
+  //       final Map<String, dynamic> result = data;
+
+  //       socketModels.add(result);
+  //       setState(() {});
+  //     });
+  //   });
+  // }
