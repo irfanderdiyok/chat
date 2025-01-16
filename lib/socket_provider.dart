@@ -8,6 +8,12 @@ class SocketProvider with ChangeNotifier {
 
   String username = "";
 
+  late UserData userData;
+
+  List<UserData> friendList = List.empty();
+
+  List<UserData> friendRequest = List.empty();
+
   void init() {
     // socket = IO.io('http://128.0.1.123:3002', <String, dynamic>{
     //   'transports': ['websocket'],
@@ -33,6 +39,23 @@ class SocketProvider with ChangeNotifier {
       },
     );
 
+    socket.on(
+      "myFrindList",
+      (data) {
+        friendRequest =
+            (data as List).map((x) => UserData.fromJson(x)).toList();
+        notifyListeners();
+      },
+    );
+
+    socket.on(
+      "requestList",
+      (data) {
+        friendList = (data as List).map((x) => UserData.fromJson(x)).toList();
+        notifyListeners();
+      },
+    );
+
     socket.onDisconnect((_) {
       print('Socket disconnected');
       notifyListeners();
@@ -51,16 +74,19 @@ class SocketProvider with ChangeNotifier {
 }
 
 class UserData {
+  String? email;
   String username;
   String password;
 
   UserData({
+    this.email,
     required this.username,
     required this.password,
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
+      email: json['email'],
       username: json['username'],
       password: json['password'],
     );
@@ -68,6 +94,7 @@ class UserData {
 
   Map<String, dynamic> toJson() {
     return {
+      'email': email,
       'username': username,
       'password': password,
     };

@@ -1,3 +1,4 @@
+import 'package:chat/home.dart';
 import 'package:chat/login.dart';
 import 'package:chat/register.dart';
 import 'package:chat/socket_provider.dart';
@@ -33,7 +34,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: RegisterScreen(),
+      home: HomePage(),
     );
   }
 }

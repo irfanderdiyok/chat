@@ -1,5 +1,6 @@
 import 'package:chat/chat_page.dart';
 import 'package:chat/common.dart';
+import 'package:chat/home.dart';
 import 'package:chat/login.dart';
 import 'package:chat/socket_provider.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 40),
               TextField(
+                controller: email,
                 decoration: InputDecoration(
                   labelText: 'E-mail Adresi',
                   border: OutlineInputBorder(),
@@ -44,6 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 20),
               TextField(
+                controller: username,
                 decoration: InputDecoration(
                   labelText: 'Kullanıcı Adı',
                   border: OutlineInputBorder(),
@@ -52,6 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 20),
               TextField(
+                controller: password,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Şifre',
@@ -62,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  // Giriş işlemleri burada gerçekleşecek
+                  postRegister();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
@@ -95,6 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> postRegister() async {
     List<TextEditingController> controllers = [
+      email,
       username,
       password,
     ];
@@ -114,6 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Common().showLoading(context, popUp);
 
     UserData userData = UserData(
+      email: email.text,
       username: username.text,
       password: password.text,
     );
@@ -122,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     bool result = false;
     await socketProvider.socket.emitWithAckAsync(
-      'login',
+      'register',
       userData,
       ack: (data) {
         result = data;
@@ -132,10 +138,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Navigator.of(context).pop();
 
     if (result) {
-      await Common().showErrorDialog("Başarılı", "Giriş Başarılı", context);
-      MyFunction.changePage(ChatPage(), context);
+      await Common().showErrorDialog("Başarılı", "Kayıt Başarılı", context);
+      MyFunction.changePage(HomePage(), context);
     } else {
-      await Common().showErrorDialog("Başarısız", "Giriş Başarısız", context);
+      await Common().showErrorDialog(
+          "Başarısız",
+          "Kullanmak istediğiniz e-mail adresi daha önce kullanılmış.",
+          context);
     }
 
     // Navigator.pop(context);

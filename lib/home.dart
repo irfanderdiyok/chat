@@ -1,4 +1,7 @@
+import 'package:chat/common.dart';
+import 'package:chat/socket_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -47,28 +50,33 @@ class FriendListTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: friends.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue,
-            child: Text(
-              friends[index]['name']![0],
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-          title: Text(friends[index]['name']!),
-          subtitle: Text(friends[index]['status']!),
-          trailing: Icon(
-            friends[index]['status'] == 'Çevrimiçi'
-                ? Icons.circle
-                : Icons.circle_outlined,
-            color: friends[index]['status'] == 'Çevrimiçi'
-                ? Colors.green
-                : Colors.grey,
-            size: 12,
-          ),
+    return Consumer<SocketProvider>(
+      builder: (context, socketProvider, child) {
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          itemCount: socketProvider.friendList.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue,
+                child: Text(
+                  friends[index]['name']![0],
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              title: Text(friends[index]['name']!),
+              subtitle: Text(friends[index]['status']!),
+              trailing: Icon(
+                friends[index]['status'] == 'Çevrimiçi'
+                    ? Icons.circle
+                    : Icons.circle_outlined,
+                color: friends[index]['status'] == 'Çevrimiçi'
+                    ? Colors.green
+                    : Colors.grey,
+                size: 12,
+              ),
+            );
+          },
         );
       },
     );
@@ -76,8 +84,46 @@ class FriendListTab extends StatelessWidget {
 }
 
 class FriendRequestsTab extends StatelessWidget {
+  final List<Map<String, String>> friends = [
+    {'name': 'İrfan Derdiyok', 'status': 'Çevrimiçi'},
+    {'name': 'Emrah Horsunlu', 'status': 'Son görülme: 2 saat önce'},
+    {'name': 'Hasan Games', 'status': 'Çevrimdışı'},
+    {'name': 'Ferdi Tayfur', 'status': 'Çevrimiçi'},
+    {'name': 'John Cena', 'status': 'Son görülme: 10 dakika önce'},
+  ];
   @override
   Widget build(BuildContext context) {
+    return Consumer<SocketProvider>(
+      builder: (context, socketProvider, child) {
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          itemCount: socketProvider.friendRequest.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue,
+                child: Text(
+                  friends[index]['name']![0],
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              title: Text(friends[index]['name']!),
+              subtitle: Text(friends[index]['status']!),
+              trailing: Icon(
+                friends[index]['status'] == 'Çevrimiçi'
+                    ? Icons.circle
+                    : Icons.circle_outlined,
+                color: friends[index]['status'] == 'Çevrimiçi'
+                    ? Colors.green
+                    : Colors.grey,
+                size: 12,
+              ),
+            );
+          },
+        );
+      },
+    );
+
     return Center(
       child: Text(
         'Bekleyen Arkadaşlık İstekleri',
@@ -87,15 +133,103 @@ class FriendRequestsTab extends StatelessWidget {
   }
 }
 
-class AddFriendTab extends StatelessWidget {
+class AddFriendTab extends StatefulWidget {
+  @override
+  State<AddFriendTab> createState() => _AddFriendTabState();
+}
+
+class _AddFriendTabState extends State<AddFriendTab> {
+  TextEditingController email = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(
-        'Arkadaş Ekle',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Text(
+              'Arkadaş eklemek isteğin kişinin e-mail adresini girin.',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 40),
+            TextField(
+              controller: email,
+              decoration: InputDecoration(
+                labelText: 'E-mail Adresi',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.mail),
+              ),
+            ),
+            SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                postRegister();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: EdgeInsets.symmetric(vertical: 14, horizontal: 36),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: Text(
+                'Arkadaşlık İsteği Yolla',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> postRegister() async {
+    List<TextEditingController> controllers = [
+      email,
+    ];
+
+    for (var controller in controllers) {
+      if (controller.text.isEmpty) {
+        Common().showErrorDialog(
+          "Kayıt Başarısız",
+          "Bütün alanları doldurduğunuzdan emin olun.",
+          context,
+        );
+        return;
+      }
+    }
+
+    BuildContext popUp = context;
+    Common().showLoading(context, popUp);
+
+    final socketProvider = Provider.of<SocketProvider>(context, listen: false);
+
+    bool result = false;
+    await socketProvider.socket.emitWithAckAsync(
+      'sendFriendRequest',
+      email.text,
+      ack: (data) {
+        result = data;
+      },
+    );
+    Navigator.of(context).pop();
+
+    if (result) {
+      await Common().showErrorDialog("Başarılı", "Kayıt Başarılı", context);
+    } else {
+      await Common().showErrorDialog(
+          "Başarısız",
+          "Kullanmak istediğiniz e-mail adresi daha önce kullanılmış.",
+          context);
+    }
+
+    // Navigator.pop(context);
   }
 }
 
