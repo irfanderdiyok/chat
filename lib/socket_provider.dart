@@ -4,8 +4,6 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 class SocketProvider with ChangeNotifier {
   late IO.Socket socket;
 
-  List<MessageData> messageDataList = List.empty();
-
   String username = "";
 
   late UserData userData;
@@ -13,6 +11,12 @@ class SocketProvider with ChangeNotifier {
   List<UserData> friendList = List.empty();
 
   List<UserData> friendRequest = List.empty();
+
+  List<MessageData> messageDataList = [];
+
+  void addMessage() {
+    notifyListeners();
+  }
 
   void init() {
     // socket = IO.io('http://128.0.1.123:3002', <String, dynamic>{
@@ -75,12 +79,12 @@ class SocketProvider with ChangeNotifier {
 
 class UserData {
   String? email;
-  String username;
+  String? username;
   String password;
 
   UserData({
     this.email,
-    required this.username,
+    this.username,
     required this.password,
   });
 

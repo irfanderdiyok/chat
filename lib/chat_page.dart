@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  const ChatPage({super.key, required this.friendName});
 
+  final String friendName;
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
@@ -25,7 +26,17 @@ class _ChatPageState extends State<ChatPage> {
         message: myController.text,
         sender: socketProvider.username,
       );
-      socketProvider.socket.emit('chat', messageData);
+
+      MessageData messageData2 = MessageData(
+        message: myController.text,
+        sender: "socketProvider.username",
+      );
+
+      socketProvider.messageDataList.add(messageData);
+      socketProvider.messageDataList.add(messageData2);
+      socketProvider.addMessage();
+
+      // socketProvider.socket.emit('chat', messageData);
       myController.clear();
     }
   }

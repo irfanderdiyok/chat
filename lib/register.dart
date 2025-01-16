@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(height: 20),
               TextButton(
                 onPressed: () {
-                  // Şifremi unuttum işlemleri burada gerçekleşecek
+                  MyFunction.changePagePushReplacement(LoginScreen(), context);
                 },
                 child: Text(
                   'Hesabın var mı? Giriş Yap.',
@@ -118,6 +118,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     BuildContext popUp = context;
     Common().showLoading(context, popUp);
 
+    await Future.delayed(Duration(seconds: 2));
+
     UserData userData = UserData(
       email: email.text,
       username: username.text,
@@ -126,20 +128,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     print("okey");
     final socketProvider = Provider.of<SocketProvider>(context, listen: false);
 
-    bool result = false;
-    await socketProvider.socket.emitWithAckAsync(
-      'register',
-      userData,
-      ack: (data) {
-        result = data;
-        socketProvider.username = username.text;
-      },
-    );
+    bool result = true;
+    // await socketProvider.socket.emitWithAckAsync(
+    //   'register',
+    //   userData,
+    //   ack: (data) {
+    //     result = data;
+    //     socketProvider.username = username.text;
+    //   },
+    // );
+
     Navigator.of(context).pop();
 
     if (result) {
       await Common().showErrorDialog("Başarılı", "Kayıt Başarılı", context);
-      MyFunction.changePage(HomePage(), context);
+      MyFunction.changePagePushReplacement(LoginScreen(), context);
     } else {
       await Common().showErrorDialog(
           "Başarısız",

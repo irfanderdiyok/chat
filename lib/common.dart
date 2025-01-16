@@ -1,5 +1,22 @@
 import 'package:flutter/material.dart';
 
+class MyFunction {
+  static void changePage(StatefulWidget statefulWidget, BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => statefulWidget),
+    );
+  }
+
+  static void changePagePushReplacement(
+      StatefulWidget statefulWidget, BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => statefulWidget),
+    );
+  }
+}
+
 class Common {
   Future showLoading(BuildContext context, BuildContext popUp) {
     return showDialog(

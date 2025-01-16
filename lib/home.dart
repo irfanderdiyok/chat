@@ -1,3 +1,4 @@
+import 'package:chat/chat_page.dart';
 import 'package:chat/common.dart';
 import 'package:chat/socket_provider.dart';
 import 'package:flutter/material.dart';
@@ -41,11 +42,11 @@ class _HomePageState extends State<HomePage> {
 
 class FriendListTab extends StatelessWidget {
   final List<Map<String, String>> friends = [
-    {'name': 'İrfan Derdiyok', 'status': 'Çevrimiçi'},
-    {'name': 'Emrah Horsunlu', 'status': 'Son görülme: 2 saat önce'},
-    {'name': 'Hasan Games', 'status': 'Çevrimdışı'},
-    {'name': 'Ferdi Tayfur', 'status': 'Çevrimiçi'},
-    {'name': 'John Cena', 'status': 'Son görülme: 10 dakika önce'},
+    {'name': 'Ahmet Yılmaz', 'status': 'Çevrimiçi'},
+    {'name': 'Mehmet Kaya', 'status': 'Son görülme: 2 saat önce'},
+    {'name': 'Elif Demir', 'status': 'Çevrimdışı'},
+    {'name': 'Ayşe Arslan', 'status': 'Çevrimiçi'},
+    {'name': 'Deniz Şahin', 'status': 'Son görülme: 10 dakika önce'},
   ];
 
   @override
@@ -54,7 +55,7 @@ class FriendListTab extends StatelessWidget {
       builder: (context, socketProvider, child) {
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          itemCount: socketProvider.friendList.length,
+          itemCount: 5, //socketProvider.friendList.length,
           itemBuilder: (context, index) {
             return ListTile(
               leading: CircleAvatar(
@@ -75,6 +76,15 @@ class FriendListTab extends StatelessWidget {
                     : Colors.grey,
                 size: 12,
               ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ChatPage(friendName: friends[index]['name']!),
+                  ),
+                );
+              },
             );
           },
         );
@@ -84,12 +94,10 @@ class FriendListTab extends StatelessWidget {
 }
 
 class FriendRequestsTab extends StatelessWidget {
-  final List<Map<String, String>> friends = [
-    {'name': 'İrfan Derdiyok', 'status': 'Çevrimiçi'},
-    {'name': 'Emrah Horsunlu', 'status': 'Son görülme: 2 saat önce'},
-    {'name': 'Hasan Games', 'status': 'Çevrimdışı'},
-    {'name': 'Ferdi Tayfur', 'status': 'Çevrimiçi'},
-    {'name': 'John Cena', 'status': 'Son görülme: 10 dakika önce'},
+  final List<Map<String, String>> friendRequests = [
+    {'name': 'Ahmet Yılmaz', 'status': 'Arkadaşlık İsteği Gönderdi'},
+    {'name': 'Mehmet Kaya', 'status': 'Arkadaşlık İsteği Gönderdi'},
+    {'name': 'Elif Demir', 'status': 'Arkadaşlık İsteği Gönderdi'},
   ];
   @override
   Widget build(BuildContext context) {
@@ -97,38 +105,69 @@ class FriendRequestsTab extends StatelessWidget {
       builder: (context, socketProvider, child) {
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          itemCount: socketProvider.friendRequest.length,
+          itemCount: 3,
           itemBuilder: (context, index) {
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.blue,
-                child: Text(
-                  friends[index]['name']![0],
-                  style: TextStyle(color: Colors.white),
+            return GestureDetector(
+              onTap: () {
+                _showFriendRequestPopup(
+                  context,
+                  friendRequests[index]['name']!,
+                  friendRequests[index]['status']!,
+                );
+              },
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Text(
+                    friendRequests[index]['name']![0],
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-              title: Text(friends[index]['name']!),
-              subtitle: Text(friends[index]['status']!),
-              trailing: Icon(
-                friends[index]['status'] == 'Çevrimiçi'
-                    ? Icons.circle
-                    : Icons.circle_outlined,
-                color: friends[index]['status'] == 'Çevrimiçi'
-                    ? Colors.green
-                    : Colors.grey,
-                size: 12,
+                title: Text(friendRequests[index]['name']!),
+                subtitle: Text(friendRequests[index]['status']!),
+                trailing: const Icon(
+                  Icons.more_vert,
+                  color: Colors.grey,
+                ),
               ),
             );
           },
         );
       },
     );
+  }
 
-    return Center(
-      child: Text(
-        'Bekleyen Arkadaşlık İstekleri',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
+  void _showFriendRequestPopup(
+      BuildContext context, String name, String status) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('$name'),
+          content: Text(
+              '$status\nBu isteği kabul etmek veya reddetmek istiyor musunuz?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Pop-up'ı kapat
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$name reddedildi')),
+                );
+              },
+              child: Text("Reddet", style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Pop-up'ı kapat
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$name kabul edildi')),
+                );
+              },
+              child: Text("Kabul Et", style: TextStyle(color: Colors.green)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
