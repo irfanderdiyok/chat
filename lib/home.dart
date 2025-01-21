@@ -1,4 +1,5 @@
 import 'package:chat/chat_page.dart';
+import 'package:chat/chat_provider.dart';
 import 'package:chat/common.dart';
 import 'package:chat/socket_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -79,21 +80,27 @@ class FriendListTab extends StatelessWidget {
                 ),
               ),
               title: Text(friend.username ?? "Bilinmeyen Kullanıcı"),
-              // subtitle: Text(friend.status ?? "Durum bilgisi yok"),
-              // trailing: Icon(
-              //   friend.status == 'Çevrimiçi'
-              //       ? Icons.circle
-              //       : Icons.circle_outlined,
-              //   color:
-              //       friend.status == 'Çevrimiçi' ? Colors.green : Colors.grey,
-              //   size: 12,
-              // ),
-              onTap: () {
+              onTap: () async {
+                String myID = socketProvider.myFirebaseID;
+
+                String? friendID =
+                    await MyFunction.getUserIdByEmail(friend.email!);
+
+                if (friendID == null) {
+                  print("Arkadaş bulunamadı");
+                  return;
+                }
+
+                String chatID = getChatId(myID, friendID);
+
+                ChatProvider chatProvider =
+                    Provider.of<ChatProvider>(context, listen: false);
+
+                chatProvider.listenToMessages(chatID);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        ChatPage(friendName: friend.username!),
+                    builder: (context) => ChatPage(chatID: chatID),
                   ),
                 );
               },
@@ -103,7 +110,48 @@ class FriendListTab extends StatelessWidget {
       },
     );
   }
+
+  String getChatId(String user1, String user2) {
+    List<String> users = [user1.toLowerCase(), user2.toLowerCase()];
+    users.sort();
+    return users.join("_");
+  }
 }
+
+//  return ListView.builder(
+//           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+//           itemCount: socketProvider.friendList.length,
+//           itemBuilder: (context, index) {
+//             final friend = socketProvider.friendList[index];
+//             return ListTile(
+//               leading: CircleAvatar(
+//                 backgroundColor: Colors.blue,
+//                 child: Text(
+//                   friend.username![0].toUpperCase(),
+//                   style: TextStyle(color: Colors.white),
+//                 ),
+//               ),
+//               title: Text(friend.username ?? "Bilinmeyen Kullanıcı"),
+//               // subtitle: Text(friend.status ?? "Durum bilgisi yok"),
+//               // trailing: Icon(
+//               //   friend.status == 'Çevrimiçi'
+//               //       ? Icons.circle
+//               //       : Icons.circle_outlined,
+//               //   color:
+//               //       friend.status == 'Çevrimiçi' ? Colors.green : Colors.grey,
+//               //   size: 12,
+//               // ),
+//               onTap: () {
+//                 Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (context) => ChatPage(friendEmail: friend.email!),
+//                   ),
+//                 );
+//               },
+//             );
+//           },
+//         );
 
 class FriendRequestsTab extends StatelessWidget {
   @override
@@ -249,7 +297,7 @@ class _AddFriendTabState extends State<AddFriendTab> {
 
   Future<void> addFriendByEmail(
       String senderId, String senderName, String receiverEmail) async {
-    String? receiverId = await getUserIdByEmail(receiverEmail);
+    String? receiverId = await MyFunction.getUserIdByEmail(receiverEmail);
 
     if (receiverId != null) {
       await sendFriendRequest(senderId, senderName, receiverId);
@@ -280,17 +328,5 @@ class _AddFriendTabState extends State<AddFriendTab> {
         .add({'senderId': senderId, 'senderName': senderName});
 
     print("Arkadaşlık isteği gönderildi.");
-  }
-
-  Future<String?> getUserIdByEmail(String email) async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .get();
-
-    if (querySnapshot.docs.isNotEmpty) {
-      return querySnapshot.docs.first.id;
-    }
-    return null;
   }
 }

@@ -1,3 +1,4 @@
+import 'package:chat/chat_provider.dart';
 import 'package:chat/firebase_options.dart';
 import 'package:chat/register.dart';
 import 'package:chat/socket_provider.dart';
@@ -19,6 +20,9 @@ void main() async {
             socketProvider.init();
             return socketProvider;
           },
+        ),
+        ChangeNotifierProvider<ChatProvider>(
+          create: (context) => ChatProvider(),
         ),
       ],
       child: const MyApp(),

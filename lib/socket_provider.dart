@@ -6,7 +6,6 @@ class SocketProvider with ChangeNotifier {
 
   late UserData userData;
 
-  List<MessageData> messageDataList = [];
   List<UserData> friendList = [];
 
   List<Map<String, String>> friendRequest = [];
@@ -150,30 +149,6 @@ class UserData {
     return {
       'email': email,
       'username': username,
-    };
-  }
-}
-
-class MessageData {
-  String message;
-  String sender;
-
-  MessageData({
-    required this.message,
-    required this.sender,
-  });
-
-  factory MessageData.fromJson(Map<String, dynamic> json) {
-    return MessageData(
-      message: json['message'],
-      sender: json['sender'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'message': message,
-      'sender': sender,
     };
   }
 }

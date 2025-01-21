@@ -1,11 +1,13 @@
+import 'package:chat/chat_provider.dart';
 import 'package:chat/socket_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, required this.friendName});
+  const ChatPage({super.key, required this.chatID});
 
-  final String friendName;
+  final String chatID;
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
@@ -20,24 +22,48 @@ class _ChatPageState extends State<ChatPage> {
     socketProvider = Provider.of<SocketProvider>(context, listen: false);
   }
 
-  void sendMessage() {
-    if (myController.text.isNotEmpty) {
-      // MessageData messageData = MessageData(
-      //   message: myController.text,
-      //   sender: socketProvider.username,
-      // );
+  Future<String?> getUserIdByEmail(String email) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
 
-      // MessageData messageData2 = MessageData(
-      //   message: myController.text,
-      //   sender: "socketProvider.username",
-      // );
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.first.id;
+      }
+    } catch (e) {
+      print("Email ile kullanıcı ID alınırken hata oluştu: $e");
+    }
+    return null;
+  }
 
-      // socketProvider.messageDataList.add(messageData);
-      // socketProvider.messageDataList.add(messageData2);
-      // socketProvider.addMessage();
+  void sendMessage() async {
+    if (myController.text.isEmpty) {
+      print("Boş mesaj gönderilemez.");
+      return;
+    }
 
-      // socketProvider.socket.emit('chat', messageData);
-      myController.clear();
+    String messageContent = myController.text.trim();
+    myController.clear();
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatID)
+          .collection('messages')
+          .add({
+        'sender': socketProvider.myFirebaseID,
+        'content': messageContent,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      print("Mesaj gönderildi.");
+    } catch (e) {
+      print("Mesaj gönderme hatası: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Mesaj gönderilemedi. Lütfen tekrar deneyin.")),
+      );
     }
   }
 
@@ -54,16 +80,21 @@ class _ChatPageState extends State<ChatPage> {
             Expanded(
               child: Container(
                 color: Colors.grey[100],
-                child: Consumer<SocketProvider>(
-                  builder: (context, socketProvider, child) {
+                child: Consumer<ChatProvider>(
+                  builder: (context, chatProvider, child) {
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 10),
-                      itemCount: socketProvider.messageDataList.length,
+                      itemCount: chatProvider.messageDataList.length,
                       itemBuilder: (context, index) {
+                        final message = chatProvider.messageDataList[index];
+                        final isMyMessage =
+                            message.senderId == socketProvider.myFirebaseID;
+
                         return chatWidget(
-                          socketProvider.messageDataList[index],
-                          context,
+                          message.message,
+                          isMyMessage,
+                          message.timestamp,
                         );
                       },
                     );
@@ -109,9 +140,8 @@ class _ChatPageState extends State<ChatPage> {
   }
 }
 
-Widget chatWidget(MessageData messageData, BuildContext context) {
-  bool isMyMessage = true;
-
+Widget chatWidget(
+    String messageContent, bool isMyMessage, Timestamp? timestamp) {
   return Align(
     alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
     child: Container(
@@ -132,7 +162,7 @@ Widget chatWidget(MessageData messageData, BuildContext context) {
             isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
-            messageData.message,
+            messageContent,
             style: TextStyle(
               color: isMyMessage ? Colors.white : Colors.black87,
               fontSize: 16,
@@ -140,7 +170,9 @@ Widget chatWidget(MessageData messageData, BuildContext context) {
           ),
           const SizedBox(height: 5),
           Text(
-            "15.02.2023", // Tarihi dinamik yapabilirsin
+            timestamp != null
+                ? "${DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch).hour.toString().padLeft(2, '0')}:${DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch).minute.toString().padLeft(2, '0')}"
+                : "Bilinmeyen zaman",
             style: TextStyle(
               fontSize: 12,
               color: isMyMessage ? Colors.white70 : Colors.black54,
