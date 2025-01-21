@@ -14,6 +14,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   @override
+  void initState() {
+    super.initState();
+
+    final socketProvider = Provider.of<SocketProvider>(context, listen: false);
+    socketProvider.fetchFriendRequests();
+    socketProvider.fetchFriendList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 3,
@@ -42,47 +51,49 @@ class _HomePageState extends State<HomePage> {
 }
 
 class FriendListTab extends StatelessWidget {
-  final List<Map<String, String>> friends = [
-    {'name': 'Ahmet Yılmaz', 'status': 'Çevrimiçi'},
-    {'name': 'Mehmet Kaya', 'status': 'Son görülme: 2 saat önce'},
-    {'name': 'Elif Demir', 'status': 'Çevrimdışı'},
-    {'name': 'Ayşe Arslan', 'status': 'Çevrimiçi'},
-    {'name': 'Deniz Şahin', 'status': 'Son görülme: 10 dakika önce'},
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Consumer<SocketProvider>(
       builder: (context, socketProvider, child) {
+        // Arkadaş listesi yoksa bir mesaj göster
+        if (socketProvider.friendList.isEmpty) {
+          return Center(
+            child: Text(
+              "Arkadaş listeniz boş.",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
+        }
+
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          itemCount: 5, //socketProvider.friendList.length,
+          itemCount: socketProvider.friendList.length,
           itemBuilder: (context, index) {
+            final friend = socketProvider.friendList[index];
             return ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.blue,
                 child: Text(
-                  friends[index]['name']![0],
+                  friend.username![0].toUpperCase(),
                   style: TextStyle(color: Colors.white),
                 ),
               ),
-              title: Text(friends[index]['name']!),
-              subtitle: Text(friends[index]['status']!),
-              trailing: Icon(
-                friends[index]['status'] == 'Çevrimiçi'
-                    ? Icons.circle
-                    : Icons.circle_outlined,
-                color: friends[index]['status'] == 'Çevrimiçi'
-                    ? Colors.green
-                    : Colors.grey,
-                size: 12,
-              ),
+              title: Text(friend.username ?? "Bilinmeyen Kullanıcı"),
+              // subtitle: Text(friend.status ?? "Durum bilgisi yok"),
+              // trailing: Icon(
+              //   friend.status == 'Çevrimiçi'
+              //       ? Icons.circle
+              //       : Icons.circle_outlined,
+              //   color:
+              //       friend.status == 'Çevrimiçi' ? Colors.green : Colors.grey,
+              //   size: 12,
+              // ),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        ChatPage(friendName: friends[index]['name']!),
+                        ChatPage(friendName: friend.username!),
                   ),
                 );
               },
@@ -95,37 +106,34 @@ class FriendListTab extends StatelessWidget {
 }
 
 class FriendRequestsTab extends StatelessWidget {
-  final List<Map<String, String>> friendRequests = [
-    {'name': 'Ahmet Yılmaz', 'status': 'Arkadaşlık İsteği Gönderdi'},
-    {'name': 'Mehmet Kaya', 'status': 'Arkadaşlık İsteği Gönderdi'},
-    {'name': 'Elif Demir', 'status': 'Arkadaşlık İsteği Gönderdi'},
-  ];
   @override
   Widget build(BuildContext context) {
     return Consumer<SocketProvider>(
       builder: (context, socketProvider, child) {
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          itemCount: 3,
+          itemCount: socketProvider.friendRequest.length,
           itemBuilder: (context, index) {
+            final request = socketProvider.friendRequest[index];
             return GestureDetector(
               onTap: () {
                 _showFriendRequestPopup(
                   context,
-                  friendRequests[index]['name']!,
-                  friendRequests[index]['status']!,
+                  request['senderName']!,
+                  request['senderId']!,
+                  request['requestId']!,
                 );
               },
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: Colors.blue,
                   child: Text(
-                    friendRequests[index]['name']![0],
+                    request['senderName']![0],
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-                title: Text(friendRequests[index]['name']!),
-                subtitle: Text(friendRequests[index]['status']!),
+                title: Text(request['senderName']!),
+                subtitle: Text('Arkadaşlık İsteği Gönderdi'),
                 trailing: const Icon(
                   Icons.more_vert,
                   color: Colors.grey,
@@ -139,18 +147,20 @@ class FriendRequestsTab extends StatelessWidget {
   }
 
   void _showFriendRequestPopup(
-      BuildContext context, String name, String status) {
+      BuildContext context, String name, String senderId, String requestId) {
+    final socketProvider = Provider.of<SocketProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text('$name'),
-          content: Text(
-              '$status\nBu isteği kabul etmek veya reddetmek istiyor musunuz?'),
+          content:
+              Text('Bu isteği kabul etmek veya reddetmek istiyor musunuz?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Pop-up'ı kapat
+              onPressed: () async {
+                Navigator.pop(context);
+                await socketProvider.rejectFriendRequest(requestId);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('$name reddedildi')),
                 );
@@ -158,8 +168,9 @@ class FriendRequestsTab extends StatelessWidget {
               child: Text("Reddet", style: TextStyle(color: Colors.red)),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Pop-up'ı kapat
+              onPressed: () async {
+                Navigator.pop(context);
+                await socketProvider.acceptFriendRequest(senderId, requestId);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('$name kabul edildi')),
                 );
