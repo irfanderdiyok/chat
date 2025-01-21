@@ -1,11 +1,9 @@
-import 'package:chat/chat_page.dart';
 import 'package:chat/common.dart';
 import 'package:chat/home.dart';
 
 import 'package:chat/register.dart';
-import 'package:chat/socket_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -56,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  postRegister();
+                  postLogin();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
@@ -88,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> postRegister() async {
+  Future<void> postLogin() async {
     List<TextEditingController> controllers = [
       email,
       password,
@@ -97,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
     for (var controller in controllers) {
       if (controller.text.isEmpty) {
         Common().showErrorDialog(
-          "Kayıt Başarısız",
+          "Giriş Başarısız",
           "Bütün alanları doldurduğunuzdan emin olun.",
           context,
         );
@@ -107,39 +105,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
     BuildContext popUp = context;
     Common().showLoading(context, popUp);
-    await Future.delayed(Duration(seconds: 2));
-    UserData userData = UserData(
-      email: email.text,
-      password: password.text,
-    );
-    print("okey");
-    final socketProvider = Provider.of<SocketProvider>(context, listen: false);
 
-    bool result = false;
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email.text,
+        password: password.text,
+      );
 
-    if (email.text == "admin@admin.com" && password.text == "admin") {
-      result = true;
-    } else {
-      result = false;
-    }
+      Navigator.of(context).pop();
 
-    // await socketProvider.socket.emitWithAckAsync(
-    //   'register',
-    //   userData,
-    //   ack: (data) {
-    //     result = data;
-    //   },
-    // );
-    Navigator.of(context).pop();
-
-    if (result) {
       await Common().showErrorDialog("Başarılı", "Giriş Başarılı", context);
       MyFunction.changePagePushReplacement(HomePage(), context);
-    } else {
-      await Common()
-          .showErrorDialog("Başarısız", "E-mail veya şifre yanlış", context);
-    }
+    } on FirebaseAuthException catch (e) {
+      Navigator.of(context).pop();
 
-    // Navigator.pop(context);
+      String errorMessage = "Giriş sırasında bir hata oluştu.";
+      if (e.code == 'user-not-found') {
+        errorMessage = "E-posta adresine ait kullanıcı bulunamadı.";
+      } else if (e.code == 'wrong-password') {
+        errorMessage = "Yanlış şifre girdiniz.";
+      } else if (e.code == 'invalid-email') {
+        errorMessage = "Geçersiz bir e-posta adresi girdiniz.";
+      }
+
+      await Common().showErrorDialog("Başarısız", errorMessage, context);
+    } catch (e) {
+      Navigator.of(context).pop();
+      await Common().showErrorDialog("Başarısız",
+          "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyin.", context);
+    }
   }
 }

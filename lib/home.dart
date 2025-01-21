@@ -250,13 +250,13 @@ class _AddFriendTabState extends State<AddFriendTab> {
     final socketProvider = Provider.of<SocketProvider>(context, listen: false);
 
     bool result = false;
-    await socketProvider.socket.emitWithAckAsync(
-      'sendFriendRequest',
-      email.text,
-      ack: (data) {
-        result = data;
-      },
-    );
+    // await socketProvider.socket.emitWithAckAsync(
+    //   'sendFriendRequest',
+    //   email.text,
+    //   ack: (data) {
+    //     result = data;
+    //   },
+    // );
     Navigator.of(context).pop();
 
     if (result) {

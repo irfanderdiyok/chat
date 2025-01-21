@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "737677881732",
+    "project_id": "gizchat",
+    "storage_bucket": "gizchat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:737677881732:android:ab24c95d4840490522add1",
+        "android_client_info": {
+          "package_name": "com.example.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAtHacz4tW3FPp1KkHpL24LqFJfeFs_Pes"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

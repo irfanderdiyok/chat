@@ -1,10 +1,8 @@
-import 'package:chat/chat_page.dart';
 import 'package:chat/common.dart';
-import 'package:chat/home.dart';
 import 'package:chat/login.dart';
-import 'package:chat/socket_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -118,38 +116,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
     BuildContext popUp = context;
     Common().showLoading(context, popUp);
 
-    await Future.delayed(Duration(seconds: 2));
+    try {
+      final credential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.text.trim(),
+        password: password.text.trim(),
+      );
 
-    UserData userData = UserData(
-      email: email.text,
-      username: username.text,
-      password: password.text,
-    );
-    print("okey");
-    final socketProvider = Provider.of<SocketProvider>(context, listen: false);
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user?.uid)
+          .set({
+        'email': email.text.trim(),
+        'username': username.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    bool result = true;
-    // await socketProvider.socket.emitWithAckAsync(
-    //   'register',
-    //   userData,
-    //   ack: (data) {
-    //     result = data;
-    //     socketProvider.username = username.text;
-    //   },
-    // );
+      Navigator.of(context).pop();
 
-    Navigator.of(context).pop();
-
-    if (result) {
+      // Başarılı işlem
       await Common().showErrorDialog("Başarılı", "Kayıt Başarılı", context);
       MyFunction.changePagePushReplacement(LoginScreen(), context);
-    } else {
-      await Common().showErrorDialog(
-          "Başarısız",
-          "Kullanmak istediğiniz e-mail adresi daha önce kullanılmış.",
-          context);
-    }
+    } on FirebaseAuthException catch (e) {
+      Navigator.of(context).pop();
+      String errorMessage = "Kayıt işlemi sırasında bir hata oluştu.";
+      if (e.code == 'email-already-in-use') {
+        errorMessage =
+            "Kullanmak istediğiniz e-posta adresi daha önce kullanılmış.";
+      } else if (e.code == 'weak-password') {
+        errorMessage = "Şifre çok zayıf. Daha güçlü bir şifre seçin.";
+      } else if (e.code == 'invalid-email') {
+        errorMessage = "Geçersiz bir e-posta adresi girdiniz.";
+      }
 
-    // Navigator.pop(context);
+      print(e);
+
+      await Common().showErrorDialog("Başarısız", errorMessage, context);
+    } catch (e) {
+      Navigator.of(context).pop();
+      await Common().showErrorDialog(
+        "Başarısız",
+        "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+        context,
+      );
+    }
   }
 }

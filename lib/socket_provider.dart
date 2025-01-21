@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketProvider with ChangeNotifier {
-  late IO.Socket socket;
-
   String username = "";
 
   late UserData userData;
@@ -23,56 +20,37 @@ class SocketProvider with ChangeNotifier {
     //   'transports': ['websocket'],
     // });
 
-    socket = IO.io('http://10.0.2.2:3002', <String, dynamic>{
-      'transports': ['websocket'],
-    });
+    // socket.on(
+    //   "chat",
+    //   (data) {
+    //     print("Hadi ama !!!!!!!!!!!!!!");
+    //     print(data);
+    //     messageDataList =
+    //         (data as List).map((x) => MessageData.fromJson(x)).toList();
+    //     notifyListeners();
+    //   },
+    // );
 
-    socket.onConnect((_) {
-      print('Socket connected');
-      // socket.emit("serverConnect");
-    });
+    // socket.on(
+    //   "myFrindList",
+    //   (data) {
+    //     friendRequest =
+    //         (data as List).map((x) => UserData.fromJson(x)).toList();
+    //     notifyListeners();
+    //   },
+    // );
 
-    socket.on(
-      "chat",
-      (data) {
-        print("Hadi ama !!!!!!!!!!!!!!");
-        print(data);
-        messageDataList =
-            (data as List).map((x) => MessageData.fromJson(x)).toList();
-        notifyListeners();
-      },
-    );
-
-    socket.on(
-      "myFrindList",
-      (data) {
-        friendRequest =
-            (data as List).map((x) => UserData.fromJson(x)).toList();
-        notifyListeners();
-      },
-    );
-
-    socket.on(
-      "requestList",
-      (data) {
-        friendList = (data as List).map((x) => UserData.fromJson(x)).toList();
-        notifyListeners();
-      },
-    );
-
-    socket.onDisconnect((_) {
-      print('Socket disconnected');
-      notifyListeners();
-    });
-
-    socket.onError((data) {
-      print('Socket error: $data');
-    });
+    // socket.on(
+    //   "requestList",
+    //   (data) {
+    //     friendList = (data as List).map((x) => UserData.fromJson(x)).toList();
+    //     notifyListeners();
+    //   },
+    // );
   }
 
   @override
   void dispose() {
-    socket.dispose();
     super.dispose();
   }
 }

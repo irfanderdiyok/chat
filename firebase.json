@@ -1,0 +1,22 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "gizchat",
+          "appId": "1:737677881732:android:ab24c95d4840490522add1",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "gizchat",
+          "configurations": {
+            "android": "1:737677881732:android:ab24c95d4840490522add1",
+            "windows": "1:737677881732:web:a0b4382ee2e0389c22add1"
+          }
+        }
+      }
+    }
+  }
+}
