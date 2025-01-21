@@ -2,8 +2,11 @@ import 'package:chat/common.dart';
 import 'package:chat/home.dart';
 
 import 'package:chat/register.dart';
+import 'package:chat/socket_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -107,13 +110,28 @@ class _LoginScreenState extends State<LoginScreen> {
     Common().showLoading(context, popUp);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email.text,
-        password: password.text,
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email.text.trim(),
+        password: password.text.trim(),
       );
 
-      Navigator.of(context).pop();
+      final userId = userCredential.user!.uid;
 
+      UserData? userData = await getUserData(userId);
+
+      if (userData != null) {
+        final socketProvider =
+            Provider.of<SocketProvider>(context, listen: false);
+        socketProvider.myFirebaseID =
+            userId; // SocketProvider içinde tanımlı olmalı
+        socketProvider.userData =
+            userData; // SocketProvider içinde tanımlı olmalı
+      } else {
+        print("Kullanıcı verisi çekilemedi.");
+      }
+
+      Navigator.of(context).pop();
       await Common().showErrorDialog("Başarılı", "Giriş Başarılı", context);
       MyFunction.changePagePushReplacement(HomePage(), context);
     } on FirebaseAuthException catch (e) {
@@ -134,5 +152,22 @@ class _LoginScreenState extends State<LoginScreen> {
       await Common().showErrorDialog("Başarısız",
           "Bilinmeyen bir hata oluştu. Lütfen tekrar deneyin.", context);
     }
+  }
+
+  Future<UserData?> getUserData(String userId) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        return UserData.fromJson(userDoc.data()!);
+      } else {
+        print("Kullanıcı verisi bulunamadı. UserID: $userId");
+      }
+    } catch (e) {
+      print("getUserData hatası: $e");
+    }
+    return null;
   }
 }

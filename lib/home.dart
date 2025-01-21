@@ -1,6 +1,7 @@
 import 'package:chat/chat_page.dart';
 import 'package:chat/common.dart';
 import 'package:chat/socket_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -208,7 +209,14 @@ class _AddFriendTabState extends State<AddFriendTab> {
             SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
-                postRegister();
+                final socketProvider =
+                    Provider.of<SocketProvider>(context, listen: false);
+
+                addFriendByEmail(
+                  socketProvider.myFirebaseID,
+                  socketProvider.userData.username!,
+                  email.text,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -228,81 +236,50 @@ class _AddFriendTabState extends State<AddFriendTab> {
     );
   }
 
-  Future<void> postRegister() async {
-    List<TextEditingController> controllers = [
-      email,
-    ];
+  Future<void> addFriendByEmail(
+      String senderId, String senderName, String receiverEmail) async {
+    String? receiverId = await getUserIdByEmail(receiverEmail);
 
-    for (var controller in controllers) {
-      if (controller.text.isEmpty) {
-        Common().showErrorDialog(
-          "Kayıt Başarısız",
-          "Bütün alanları doldurduğunuzdan emin olun.",
-          context,
-        );
-        return;
-      }
-    }
-
-    BuildContext popUp = context;
-    Common().showLoading(context, popUp);
-
-    final socketProvider = Provider.of<SocketProvider>(context, listen: false);
-
-    bool result = false;
-    // await socketProvider.socket.emitWithAckAsync(
-    //   'sendFriendRequest',
-    //   email.text,
-    //   ack: (data) {
-    //     result = data;
-    //   },
-    // );
-    Navigator.of(context).pop();
-
-    if (result) {
-      await Common().showErrorDialog("Başarılı", "Kayıt Başarılı", context);
+    if (receiverId != null) {
+      await sendFriendRequest(senderId, senderName, receiverId);
     } else {
-      await Common().showErrorDialog(
-          "Başarısız",
-          "Kullanmak istediğiniz e-mail adresi daha önce kullanılmış.",
-          context);
+      print("Kullanıcı bulunamadı");
+    }
+  }
+
+  Future<void> sendFriendRequest(
+      String senderId, String senderName, String receiverId) async {
+    final existingRequest = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(receiverId)
+        .collection('friend_requests')
+        .where('senderId', isEqualTo: senderId)
+        .get();
+
+    if (existingRequest.docs.isNotEmpty) {
+      print("Bu kullanıcıya zaten bir arkadaşlık isteği gönderilmiş.");
+      return;
     }
 
-    // Navigator.pop(context);
+    // Arkadaşlık isteği gönder
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(receiverId)
+        .collection('friend_requests')
+        .add({'senderId': senderId, 'senderName': senderName});
+
+    print("Arkadaşlık isteği gönderildi.");
+  }
+
+  Future<String?> getUserIdByEmail(String email) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first.id;
+    }
+    return null;
   }
 }
-
-
-
-
-//  child: Consumer<SocketProvider>(
-//           builder: (context, socketProvider, child) {
-//             return ListView.builder(
-//               itemCount: socketProvider.mevlutDataList.length,
-//               itemBuilder: (context, index) {
-//                 return Container(
-//                   height: 120,
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Text("Mevlüt Adı : " +
-//                           socketProvider.mevlutDataList[index].mevlutAdi),
-//                       Text("Mevlüt Yemeği : " +
-//                           socketProvider.mevlutDataList[index].mevlutYemegi),
-//                       Text("Mevlüt Adresi : " +
-//                           socketProvider.mevlutDataList[index].mevlutAdresi),
-//                       Text("Mevlüt Başlangıç : " +
-//                           socketProvider
-//                               .mevlutDataList[index].neZamanBaslayacak),
-//                       Text("Mevlüt Bitiş : " +
-//                           socketProvider.mevlutDataList[index].neZamanBitecek),
-//                       SizedBox(
-//                         height: context.dynamicHeight(0.01),
-//                       )
-//                     ],
-//                   ),
-//                 );
-//               },
-//             );
-//           },
-//         ),

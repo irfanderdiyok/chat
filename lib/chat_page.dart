@@ -22,19 +22,19 @@ class _ChatPageState extends State<ChatPage> {
 
   void sendMessage() {
     if (myController.text.isNotEmpty) {
-      MessageData messageData = MessageData(
-        message: myController.text,
-        sender: socketProvider.username,
-      );
+      // MessageData messageData = MessageData(
+      //   message: myController.text,
+      //   sender: socketProvider.username,
+      // );
 
-      MessageData messageData2 = MessageData(
-        message: myController.text,
-        sender: "socketProvider.username",
-      );
+      // MessageData messageData2 = MessageData(
+      //   message: myController.text,
+      //   sender: "socketProvider.username",
+      // );
 
-      socketProvider.messageDataList.add(messageData);
-      socketProvider.messageDataList.add(messageData2);
-      socketProvider.addMessage();
+      // socketProvider.messageDataList.add(messageData);
+      // socketProvider.messageDataList.add(messageData2);
+      // socketProvider.addMessage();
 
       // socketProvider.socket.emit('chat', messageData);
       myController.clear();
@@ -110,9 +110,7 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 Widget chatWidget(MessageData messageData, BuildContext context) {
-  String username =
-      Provider.of<SocketProvider>(context, listen: false).username;
-  bool isMyMessage = messageData.sender == username;
+  bool isMyMessage = true;
 
   return Align(
     alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,

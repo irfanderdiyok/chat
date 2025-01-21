@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SocketProvider with ChangeNotifier {
-  String username = "";
+  late String myFirebaseID;
 
   late UserData userData;
 
@@ -15,39 +15,7 @@ class SocketProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void init() {
-    // socket = IO.io('http://128.0.1.123:3002', <String, dynamic>{
-    //   'transports': ['websocket'],
-    // });
-
-    // socket.on(
-    //   "chat",
-    //   (data) {
-    //     print("Hadi ama !!!!!!!!!!!!!!");
-    //     print(data);
-    //     messageDataList =
-    //         (data as List).map((x) => MessageData.fromJson(x)).toList();
-    //     notifyListeners();
-    //   },
-    // );
-
-    // socket.on(
-    //   "myFrindList",
-    //   (data) {
-    //     friendRequest =
-    //         (data as List).map((x) => UserData.fromJson(x)).toList();
-    //     notifyListeners();
-    //   },
-    // );
-
-    // socket.on(
-    //   "requestList",
-    //   (data) {
-    //     friendList = (data as List).map((x) => UserData.fromJson(x)).toList();
-    //     notifyListeners();
-    //   },
-    // );
-  }
+  void init() {}
 
   @override
   void dispose() {
@@ -58,19 +26,16 @@ class SocketProvider with ChangeNotifier {
 class UserData {
   String? email;
   String? username;
-  String password;
 
   UserData({
     this.email,
     this.username,
-    required this.password,
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
-      email: json['email'],
-      username: json['username'],
-      password: json['password'],
+      email: json['email'] ?? '', // null kontrolü
+      username: json['username'] ?? '', // null kontrolü
     );
   }
 
@@ -78,7 +43,6 @@ class UserData {
     return {
       'email': email,
       'username': username,
-      'password': password,
     };
   }
 }
@@ -106,25 +70,3 @@ class MessageData {
     };
   }
 }
-
-
-  // void connectSocket() {
-  //   socket = IO.io(
-  //       'http://10.0.2.2:3000',
-  //       IO.OptionBuilder()
-  //           .setTransports(['websocket'])
-  //           .disableAutoConnect()
-  //           .build());
-
-  //   socket.connect();
-  //   socket.onConnect((_) {
-  //     debugPrint('connect');
-  //     socket.emit('sendUserData', {"dataUsername": "test5"});
-  //     socket.on('chat', (data) {
-  //       final Map<String, dynamic> result = data;
-
-  //       socketModels.add(result);
-  //       setState(() {});
-  //     });
-  //   });
-  // }

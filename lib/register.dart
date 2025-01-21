@@ -129,7 +129,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           .set({
         'email': email.text.trim(),
         'username': username.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
       });
 
       Navigator.of(context).pop();
