@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ChatProvider with ChangeNotifier {
   List<MessageData> messageDataList = [];
-
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? streamSubscription;
   void listenToMessages(String chatId) {
-    FirebaseFirestore.instance
+    streamSubscription?.cancel();
+
+    streamSubscription = FirebaseFirestore.instance
         .collection('chats')
         .doc(chatId)
         .collection('messages')

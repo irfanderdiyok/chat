@@ -271,11 +271,8 @@ class _AddFriendTabState extends State<AddFriendTab> {
                 final socketProvider =
                     Provider.of<SocketProvider>(context, listen: false);
 
-                addFriendByEmail(
-                  socketProvider.myFirebaseID,
-                  socketProvider.userData.username!,
-                  email.text,
-                );
+                addFriendByEmail(socketProvider.myFirebaseID,
+                    socketProvider.userData.username!, email.text, context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -296,37 +293,84 @@ class _AddFriendTabState extends State<AddFriendTab> {
   }
 
   Future<void> addFriendByEmail(
-      String senderId, String senderName, String receiverEmail) async {
+      String senderId, String senderName, String receiverEmail, context) async {
+    BuildContext popUp = context;
+    Common().showLoading(context, popUp);
+
     String? receiverId = await MyFunction.getUserIdByEmail(receiverEmail);
 
     if (receiverId != null) {
-      await sendFriendRequest(senderId, senderName, receiverId);
+      await sendFriendRequest(senderId, senderName, receiverId, context);
     } else {
+      Navigator.of(context).pop();
+      await Common().showErrorDialog(
+          "Arkadaş Ekleme Başarısız", "Kullanıcı bulunamadı", context);
       print("Kullanıcı bulunamadı");
     }
   }
 
-  Future<void> sendFriendRequest(
-      String senderId, String senderName, String receiverId) async {
-    final existingRequest = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(receiverId)
-        .collection('friend_requests')
-        .where('senderId', isEqualTo: senderId)
-        .get();
+  Future<void> sendFriendRequest(String senderId, String senderName,
+      String receiverId, BuildContext context) async {
+    try {
+      // Zaten arkadaş mı kontrol et
+      final existingFriend = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(receiverId)
+          .collection('friends')
+          .where('friendId', isEqualTo: senderId)
+          .get();
 
-    if (existingRequest.docs.isNotEmpty) {
-      print("Bu kullanıcıya zaten bir arkadaşlık isteği gönderilmiş.");
-      return;
+      if (existingFriend.docs.isNotEmpty) {
+        Navigator.of(context).pop();
+        await Common().showErrorDialog(
+          "Arkadaş Ekleme Başarısız",
+          "Bu kullanıcı zaten arkadaşınız.",
+          context,
+        );
+        print("Bu kullanıcı zaten arkadaşınız.");
+        return;
+      }
+
+      // Daha önce istek gönderilmiş mi kontrol et
+      final existingRequest = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(receiverId)
+          .collection('friend_requests')
+          .where('senderId', isEqualTo: senderId)
+          .get();
+
+      if (existingRequest.docs.isNotEmpty) {
+        Navigator.of(context).pop();
+        await Common().showErrorDialog(
+          "Arkadaş Ekleme Başarısız",
+          "Bu kullanıcıya zaten bir arkadaşlık isteği gönderilmiş.",
+          context,
+        );
+        print("Bu kullanıcıya zaten bir arkadaşlık isteği gönderilmiş.");
+        return;
+      }
+
+      // Arkadaşlık isteği gönder
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(receiverId)
+          .collection('friend_requests')
+          .add({'senderId': senderId, 'senderName': senderName});
+
+      Navigator.of(context).pop();
+      await Common().showErrorDialog(
+        "Başarılı",
+        "Arkadaşlık isteği gönderildi.",
+        context,
+      );
+      print("Arkadaşlık isteği gönderildi.");
+    } catch (e) {
+      print("Arkadaşlık isteği gönderilirken hata oluştu: $e");
+      await Common().showErrorDialog(
+        "Hata",
+        "Arkadaşlık isteği gönderilirken bir sorun oluştu.",
+        context,
+      );
     }
-
-    // Arkadaşlık isteği gönder
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(receiverId)
-        .collection('friend_requests')
-        .add({'senderId': senderId, 'senderName': senderName});
-
-    print("Arkadaşlık isteği gönderildi.");
   }
 }

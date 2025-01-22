@@ -10,58 +10,59 @@ class SocketProvider with ChangeNotifier {
 
   List<Map<String, String>> friendRequest = [];
 
-  Future<void> fetchFriendList() async {
+  void fetchFriendList() {
     try {
-      final querySnapshot = await FirebaseFirestore.instance
+      FirebaseFirestore.instance
           .collection('users')
           .doc(myFirebaseID)
           .collection('friends')
-          .get();
+          .snapshots()
+          .listen((querySnapshot) async {
+        List<UserData> tempFriendList = [];
 
-      List<UserData> tempFriendList = [];
+        for (var doc in querySnapshot.docs) {
+          final friendId = doc['friendId'];
+          final friendSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(friendId)
+              .get();
 
-      for (var doc in querySnapshot.docs) {
-        final friendId = doc['friendId'];
-        final friendSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(friendId)
-            .get();
-
-        if (friendSnapshot.exists) {
-          tempFriendList.add(
-            UserData(
-              email: friendSnapshot['email'],
-              username: friendSnapshot['username'],
-            ),
-          );
+          if (friendSnapshot.exists) {
+            tempFriendList.add(
+              UserData(
+                email: friendSnapshot['email'],
+                username: friendSnapshot['username'],
+              ),
+            );
+          }
         }
-      }
 
-      friendList = tempFriendList;
-      notifyListeners();
+        friendList = tempFriendList;
+        notifyListeners();
+      });
     } catch (e) {
       print("Arkadaş listesi çekilirken hata oluştu: $e");
     }
   }
 
-  Future<void> fetchFriendRequests() async {
-    print("Burası çalıştı");
+  void fetchFriendRequests() {
     try {
-      final querySnapshot = await FirebaseFirestore.instance
+      FirebaseFirestore.instance
           .collection('users')
           .doc(myFirebaseID)
           .collection('friend_requests')
-          .get();
+          .snapshots()
+          .listen((querySnapshot) {
+        friendRequest = querySnapshot.docs.map((doc) {
+          return {
+            'senderId': doc['senderId'] as String,
+            'senderName': doc['senderName'] as String,
+            'requestId': doc.id,
+          };
+        }).toList();
 
-      friendRequest = querySnapshot.docs.map((doc) {
-        return {
-          'senderId': doc['senderId'] as String,
-          'senderName': doc['senderName'] as String,
-          'requestId': doc.id,
-        };
-      }).toList();
-
-      notifyListeners();
+        notifyListeners();
+      });
     } catch (e) {
       print("Arkadaşlık istekleri çekilirken hata oluştu: $e");
     }
